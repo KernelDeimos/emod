@@ -1,6 +1,7 @@
 const { assert } = require('chai');
 const { Base } = require('../src/base');
 const { Class } = require('../src/class');
+const { EM } = require('../src/facade');
 const { Model } = require('../src/model');
 const { Null } = require('../src/null');
 const { ProxyModeller } = require('../src/proxy');
@@ -119,5 +120,46 @@ describe('Proxy', () => {
         proxyA.delegate_ = o;
         proxyA.value = true;
         assert.isTrue(o.value);
+    })
+})
+
+describe('README.md example', () => {
+    describe('Proxy Without EMod', () => {
+        it('works', () => {
+            class Greeter {
+                constructor (subject) { this.subject = subject; }
+                sayHello () { return `Hello, ${this.subject}!`; }
+                sayGoodbye () { return `Goodbye, ${this.subject}!`; }
+            }
+            class ProxyGreeter {
+                constructor (delegate) { this.delegate = delegate; }
+                sayHello () { return this.delegate.sayHello(); }
+                sayGoodbye () { return this.delegate.sayGoodbye(); }
+            }
+            class ExcitedHelloGreeter extends ProxyGreeter {
+                sayHello () { return this.delegate.sayHello().toUpperCase() }
+            }
+
+            let greeter = new Greeter('World');
+            greeter = new ExcitedHelloGreeter(greeter);
+            assert.equal(greeter.sayHello(), 'HELLO, WORLD!');
+        })
+    })
+    describe('Proxy Using EMod', () => {
+        it('works', () => {
+            class Greeter {
+                constructor (subject) { this.subject = subject; }
+                sayHello () { return `Hello, ${this.subject}!`; }
+                sayGoodbye () { return `Goodbye, ${this.subject}!`; }
+            }
+            const ProxyGreeter = EM.createProxy(Greeter);
+            class ExcitedHelloGreeter extends ProxyGreeter {
+                sayHello () { return this.delegate_.sayHello().toUpperCase() }
+            }
+
+            let greeter = new Greeter('World');
+            greeter = new ExcitedHelloGreeter({ delegate: greeter });
+            assert.equal(greeter.sayHello(), 'HELLO, WORLD!');
+        })
     })
 })

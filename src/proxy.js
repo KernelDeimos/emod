@@ -1,14 +1,18 @@
 const { Class } = require("./class");
+const { Model } = require("./model");
 const { Null } = require("./null");
 
 const ProxyModeller = {};
 ProxyModeller.fromModel = model => {
     const proxyModel = {
-        name: model.name,
+        name: `Proxy${model.name}`,
         properties: [],
         methods: [],
     };
     for ( const prop of model.properties ) {
+        // TODO: With this approach it is not possible to forward a property
+        //       named 'delegate'.
+        if ( prop.name === 'delegate' ) continue;
         proxyModel.properties.push({
             name: prop.name,
             getter: function () {
@@ -32,15 +36,26 @@ ProxyModeller.fromModel = model => {
     const nullModel = Null.fromModel(model);
     const nullClass = Class.fromModel(nullModel);
 
+    proxyModel.properties.push({
+        name: 'delegate',
+        setter (v) {
+            this.delegate_ = v;
+        },
+        getter () {
+            return this.delegate_;
+        },
+    });
     proxyModel.methods.push({
         name: 'init',
         instance: function () {
-            this.delegate_ = new nullClass();
+            if ( ! this.delegate_ ) {
+                this.delegate_ = new nullClass();
+            }
         }
     });
 
     return proxyModel;
 };
-ProxyModeller.fromClass = cls => ProxyModeller.fromModel(cls.toModel({ deep: true }));
+ProxyModeller.fromClass = cls => ProxyModeller.fromModel(Model.fromClass(cls, { deep: true }));
 
 module.exports = { ProxyModeller };

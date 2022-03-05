@@ -5,4 +5,5 @@ module.exports = {
     ...require('./src/null'),
     ...require('./src/proxy'),
     ...require('./src/base'),
+    ...require('./src/facade')
 };
